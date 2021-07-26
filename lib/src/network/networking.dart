@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:free_chat/src/fcp/fcp.dart';
 import 'package:free_chat/src/fcp/model/persistence.dart';
 import 'package:free_chat/src/model.dart';
@@ -26,8 +27,8 @@ class Networking {
   Networking._internal();
 
   Future<Node> connectClient() async {
-    var _deviceId = await Device.getId();
 
+    var _deviceId = Uuid().v4();
     fcpConnection = FcpConnection();
 
     await fcpConnection.connect();
@@ -58,8 +59,12 @@ class Networking {
 
   Future<FcpMessage> getMessage(String uri, String identifier) async {
     FcpClientGet fcpClienteGet = FcpClientGet(uri, identifier: identifier, global: true, persistence: Persistence.forever, realTimeFlag: true);
+    _logger.i("Sending message: ${fcpClienteGet.toString()}");
+    FcpMessage t = await fcpConnection.sendFcpMessageAndWaitWithAwaitedResponse(fcpClienteGet, "AllData", errorResponse: "GetFailed");
 
-    FcpMessage t = await fcpConnection.sendFcpMessageAndWaitWithAwaitedResponse(fcpClienteGet, "AllData");
+    if(t.name == "GetFailed") {
+      return null;
+    }
 
     var data = t.data;
     stringToBase64.decode(data);
@@ -69,10 +74,11 @@ class Networking {
     return t;
   }
 
-  Future<FcpMessage> sendMessage(String uri, String data, String identifier) async {
+  Future<FcpMessage> sendMessage(String uri, String data, String identifier,
+      {int prioClass}) async {
     var base64Str = stringToBase64.encode(data) + "\n";
 
-    FcpClientPut put = FcpClientPut(uri, base64Str, priorityClass: 2, dontCompress: true, identifier: identifier, global: true, persistence: Persistence.forever, dataLength: base64Str.length, metaDataContentType: "", realTimeFlag: true, extraInsertsSingleBlock: 0, extraInsertsSplitfileHeaderBlock: 0);
+    FcpClientPut put = FcpClientPut(uri, base64Str, priorityClass: prioClass ?? 2, dontCompress: true, identifier: identifier, global: true, persistence: Persistence.forever, dataLength: base64Str.length, metaDataContentType: "", realTimeFlag: true, extraInsertsSingleBlock: 0, extraInsertsSplitfileHeaderBlock: 0);
 
     _logger.i("Sending message: ${put.toString()}");
 

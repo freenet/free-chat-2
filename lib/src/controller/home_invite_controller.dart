@@ -1,10 +1,13 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:free_chat/src/fcp/fcp.dart';
 import 'package:free_chat/src/model.dart';
 import 'package:free_chat/src/network/database_handler.dart';
 import 'package:free_chat/src/network/invite.dart';
 import 'package:free_chat/src/network/networking.dart';
 import 'package:free_chat/src/utils/logger.dart';
+import 'package:free_chat/src/utils/toast.dart';
 import 'package:free_chat/src/view.dart';
 
 class HomeInviteController {
@@ -29,11 +32,21 @@ class HomeInviteController {
 
     LoadingPopup.build(context, "Joining Chatroom this can take up to a couple minutes");
 
-    await _invite.inviteAccepted(invite);
+    if(await _invite.inviteAccepted(invite)) {
+      Navigator.pop(context);
+      Navigator.pop(context);
+    }
+    else {
+      Navigator.pop(context);
+      Navigator.pop(context);
+      ErrorPopup.build(context, "An error occured while trying to join the chat room, please try again later");
+    }
 
-    Navigator.pop(context);
-    Navigator.pop(context);
+  }
 
+  void copyToClipboard(InitialInvite invite) {
+    Clipboard.setData(new ClipboardData(text: invite.toBase64()));
+    FreeToast.showToast("Copied to clipboard");
   }
 
 }

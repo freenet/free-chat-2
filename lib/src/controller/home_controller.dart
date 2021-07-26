@@ -62,8 +62,14 @@ class HomeController {
       context,
       MaterialPageRoute(builder: (context) => HomeJoin()),
     );
+    var initialInvite;
 
-    var initialInvite = InitialInvite.fromBase64(i);
+    try {
+      initialInvite = InitialInvite.fromBase64(i);
+    }
+    catch(e) {
+      return null;
+    }
 
     String identifier1 = Uuid().v4();
     String identifier2 = Uuid().v4();
@@ -71,9 +77,13 @@ class HomeController {
 
     LoadingPopupWithProgressCall.build(context, "Joining chat with ${initialInvite.getName()} this can take up to a couple minutes", [identifier1, identifier2, identifier3]);
 
-    await Invite().handleInvitation(initialInvite, identifier1, identifier2, identifier3);
+    if(await Invite().handleInvitation(initialInvite, identifier1, identifier2, identifier3))
+      Navigator.pop(context);
+    else {
+      Navigator.pop(context);
+      ErrorPopup.build(context, "An error occured while trying to join the chat room, please try again later");
 
-    Navigator.pop(context);
+    }
   }
 
   String getTextForButton() {
